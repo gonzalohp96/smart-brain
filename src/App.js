@@ -8,12 +8,8 @@ import Signin from './components/Signin/Signin.js'
 import Register from './components/Register/Register.js'
 import './App.css';
 import Particles from 'react-particles-js';
-import Clarifai from 'clarifai'
 
-const app = new Clarifai.App({
- apiKey: 'e30ba7cef213458d9011cf85e2d7050a'
-});
-
+ 
 
 const particlesOptions = {
   particles: {
@@ -27,23 +23,26 @@ const particlesOptions = {
   }
 }
 
+const initialState = {
+  input:'',
+  imageUrl:'',
+  box:{},
+  route: 'Signin',
+  isSignedIn: false,
+  user:{
+    id:'',
+    name:'',
+    email:'',
+    entries:0,
+    joined:''
+  }
+}
+
+
 class App extends Component {
   constructor(){
     super();
-    this.state={
-      input:'',
-      imageUrl:'',
-      box:{},
-      route: 'Signin',
-      isSignedIn: false,
-      user:{
-        id:'',
-        name:'',
-        email:'',
-        entries:0,
-        joined:''
-      }
-    }
+    this.state= initialState;
   };
 
   loadUser=(data)=>{
@@ -79,10 +78,14 @@ class App extends Component {
 
   onButtonSubmit = ()=>{
     this.setState({imageUrl: this.state.input});
-    app.models
-      .predict(
-        Clarifai.FACE_DETECT_MODEL, //este no es el api key, es un model id
-        this.state.input) 
+      fetch('http://localhost:3000/imageurl',{
+        method:'post',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          input: this.state.input
+        })
+      })
+      .then(response=>response.json())
       .then(
         response=>{
           if (response){
@@ -97,6 +100,7 @@ class App extends Component {
             .then(count=>{
               this.setState(Object.assign(this.state.user,{entries:count}))  
             })
+            .catch(console.log)
           } 
           this.displayFaceBox(this.calculateFaceLocation(response))
         }
@@ -106,7 +110,7 @@ class App extends Component {
 
   onRouteChange=(route)=>{
     if (route === 'Signin' || route === 'Register'){
-      this.setState({isSignedIn: false})
+      this.setState(initialState)
     } else if (route === 'home'){
       this.setState({isSignedIn: true})
     }
